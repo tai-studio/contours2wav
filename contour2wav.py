@@ -132,13 +132,13 @@ if __name__ == '__main__':
 
     # parse command line arguments for input file name
     parser = argparse.ArgumentParser()
-    parser.add_argument('-m', '--minPoints', nargs=1, type=int, default=[100])
-    parser.add_argument('-n', '--maxPoints', nargs=1, type=int, default=[1000])
-    parser.add_argument('-t', '--threshold', nargs=1, type=int, default=[127])
-    parser.add_argument('-s', '--numSamples', nargs=1, type=int, default=[8192])
-    parser.add_argument('-r', '--sampleRate', nargs=1, type=int, default=[48000])
-    parser.add_argument('infile', nargs=1)
-    parser.add_argument('outdir', nargs=1)
+    parser.add_argument('-m', '--minPoints', nargs=1, type=int, default=[100], help='minimum number of points in contour (default: 100)')
+    parser.add_argument('-n', '--maxPoints', nargs=1, type=int, default=[1000], help='maximum number of points in contour (default: 1000)')
+    parser.add_argument('-t', '--threshold', nargs=1, type=int, default=[127], help='threshold for binarization (default: 127)')
+    parser.add_argument('-s', '--numSamples', nargs=1, type=int, default=[8192], help='number of samples per contour (default: 8192)')
+    parser.add_argument('-r', '--sampleRate', nargs=1, type=int, default=[48000], help='sample rate (default: 48000)')
+    parser.add_argument('infile', nargs=1, help='input image file [.jpg, .png, ...]')
+    parser.add_argument('outdir', nargs=1, help='results will be saved to <outdir>/<infile-basename>/<n>.wav')
     args = parser.parse_args()
 
     infile = args.infile[0]
@@ -160,14 +160,18 @@ if __name__ == '__main__':
 
     # resample contours to be closed
     def resampleContour(contour):
-        epsilon = 0.001*cv.arcLength(contour, closed=True)
+        # epsilon = 0.001*cv.arcLength(contour, closed=True)
+        epsilon = 0
         return cv.approxPolyDP(contour, epsilon=epsilon, closed=True)
 
+    # compute features
     contours = list(map(lambda c: resampleContour(c), contours))
-
     centers = contours2centers(contours)
     polarContours = contours2polarDistances(contours, centers)
     cartesianContours = contours2centeredContours(contours, centers)
+
+    print(f"{infile}:\tcontours found: {len(contours)}")
+
 
     # create output directory if it doesn't exist
     if not os.path.exists(outdir[0]):
@@ -181,11 +185,11 @@ if __name__ == '__main__':
         os.makedirs(dirname)
 
 
-    print(f"{infile}:\tcontours found: {len(contours)}")
     # save to csv files
     # savepolars2csvs(polarContours, dirname)
     # savecontours2csvs(contours, dirname)
 
+    # save to wav files
     savecontours2wav(cartesianContours, dirname, numSamples, sampleRate, center=False)
     savepolars2wav(polarContours, dirname, numSamples, sampleRate, center=False)
     

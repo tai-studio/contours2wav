@@ -1,6 +1,6 @@
 # contours2wav
+*2023, Till Bovermann*
 
-## Description
 
 A python script that extracts contours from an image and generates a wav file for each contour.
 
@@ -39,3 +39,27 @@ python contour2wav.py -m100 -n50000 -t 110 infile.jpg outDir
 ```zsh
 for file in ../_assets/*.jpg; do python contour2wav.py -m100 -n50000 -t 110 $file ../_renders; done
 ```
+
+### Options
+
+```txt
+usage: contour2wav.py [-h] [-m MINPOINTS] [-n MAXPOINTS] [-t THRESHOLD] [-s NUMSAMPLES] [-r SAMPLERATE] infile outdir
+
+positional arguments:
+  infile                input image file
+  outdir                final result will be saved to outdir/infile
+options:
+  -h, --help            show this help message and exit
+  -m MINPOINTS, --minPoints MINPOINTS
+  -n MAXPOINTS, --maxPoints MAXPOINTS
+  -t THRESHOLD, --threshold THRESHOLD
+  -s NUMSAMPLES, --numSamples NUMSAMPLES
+  -r SAMPLERATE, --sampleRate SAMPLERATE
+```
+
+## Thanks
+
+* [Anja Riese](http://anjariese.com) for triggering the idea
+* [OpenCV](https://opencv.org/)
+* [NumPy](https://numpy.org/)
+* [scipy](https://www.scipy.org/)
