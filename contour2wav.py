@@ -74,7 +74,7 @@ def savecontours2csvs(contours, dirname, numSamples=100):
 
     list(map(savecontour2csv, contours, range(len(contours))))
 
-def savecontours2wav(contours, dirname, numSamples=100, sampleRate=48000, center=True):
+def savecontours2wav(contours, dirname, numSamples=100, sampleRate=48000, center=True, startIdx=0):
     """ save contours to wav files"""
     
     def savecontour2wav(contour, idx):
@@ -87,10 +87,10 @@ def savecontours2wav(contours, dirname, numSamples=100, sampleRate=48000, center
 
         signal = signal / np.max(np.abs(signal))
 
-        wavfile.write(f"{dirname}/cx_{idx}_{numSamples}at{sampleRate}.wav", sampleRate, signal.transpose()[0])
-        wavfile.write(f"{dirname}/cy_{idx}_{numSamples}at{sampleRate}.wav", sampleRate, signal.transpose()[1])
+        wavfile.write(f"{dirname}/cx_{idx}_{numSamples}at{sampleRate}.wav", sampleRate, (signal.transpose()[0]).astype(np.float32))
+        wavfile.write(f"{dirname}/cy_{idx}_{numSamples}at{sampleRate}.wav", sampleRate, (signal.transpose()[1]).astype(np.float32))
 
-    list(map(savecontour2wav, contours, range(len(contours))))
+    list(map(savecontour2wav, contours, range(startIdx, len(contours) + startIdx)))
 
 
 
@@ -106,7 +106,7 @@ def savepolars2csvs(polarContours, dirname, numSamples=100):
 
     list(map(savepolar2csv, polarContours, range(len(polarContours))))
 
-def savepolars2wav(polarContours, dirname, numSamples=100, sampleRate=48000, center=True):
+def savepolars2wav(polarContours, dirname, numSamples=100, sampleRate=48000, center=True, startIdx=0):
     """ save polar contours to wav files"""
 
     def savepolar2wav(polarContour, idx):
@@ -119,9 +119,9 @@ def savepolars2wav(polarContours, dirname, numSamples=100, sampleRate=48000, cen
             signal = signal - np.mean(signal)
         signal = signal / np.max(np.abs(signal))
 
-        wavfile.write(f"{dirname}/px_{idx}_{numSamples}at{sampleRate}.wav", sampleRate, signal)
+        wavfile.write(f"{dirname}/px_{idx}_{numSamples}at{sampleRate}.wav", sampleRate, signal.astype(np.float32))
 
-    list(map(savepolar2wav, polarContours, range(len(polarContours))))
+    list(map(savepolar2wav, contours, range(startIdx, len(contours) + startIdx)))
 
 if __name__ == '__main__':
     """
@@ -137,6 +137,8 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--threshold', nargs=1, type=int, default=[127], help='threshold for binarization (default: 127)')
     parser.add_argument('-s', '--numSamples', nargs=1, type=int, default=[8192], help='number of samples per contour (default: 8192)')
     parser.add_argument('-r', '--sampleRate', nargs=1, type=int, default=[48000], help='sample rate (default: 48000)')
+    parser.add_argument('-i', '--startIdx', nargs=1, type=int, default=[0], help='start index for contour numbering (default: 0)')
+    parser.add_argument('-p', '--polar', action='store_true', help='save polar coordinates')
     parser.add_argument('infile', nargs=1, help='input image file [.jpg, .png, ...]')
     parser.add_argument('outdir', nargs=1, help='results will be saved to <outdir>/<infile-basename>/<n>.wav')
     args = parser.parse_args()
@@ -148,6 +150,8 @@ if __name__ == '__main__':
     threshold = args.threshold[0]
     numSamples = args.numSamples[0]
     sampleRate = args.sampleRate[0]
+    startIdx = args.startIdx[0]
+    writePolar = args.polar
     # read image
     img = cv.imread(infile)
 
@@ -167,10 +171,11 @@ if __name__ == '__main__':
     # compute features
     contours = list(map(lambda c: resampleContour(c), contours))
     centers = contours2centers(contours)
-    polarContours = contours2polarDistances(contours, centers)
-    cartesianContours = contours2centeredContours(contours, centers)
 
     print(f"{infile}:\tcontours found: {len(contours)}")
+
+    cartesianContours = contours2centeredContours(contours, centers)
+
 
 
     # create output directory if it doesn't exist
@@ -190,6 +195,9 @@ if __name__ == '__main__':
     # savecontours2csvs(contours, dirname)
 
     # save to wav files
-    savecontours2wav(cartesianContours, dirname, numSamples, sampleRate, center=False)
-    savepolars2wav(polarContours, dirname, numSamples, sampleRate, center=False)
+    savecontours2wav(cartesianContours, dirname, numSamples, sampleRate, center=False, startIdx=startIdx)
+
+    if writePolar:
+        polarContours = contours2polarDistances(contours, centers)
+        savepolars2wav(polarContours, dirname, numSamples, sampleRate, center=False, startIdx=startIdx)
     
